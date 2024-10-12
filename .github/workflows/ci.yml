@@ -1,0 +1,118 @@
+---
+name: CI
+
+on:
+  pull_request:
+    branches:
+      - master
+    types:
+      - opened
+      - synchronize
+      - reopened
+  push:
+    branches:
+      - master
+
+concurrency:
+  group: "${{ github.workflow }}-${{ github.ref }}"
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ${{ matrix.RUNNER }}
+    container: ${{ matrix.CONTAINER }}
+    defaults:
+      run:
+        shell: ${{ matrix.SHELL }}
+    strategy:
+      fail-fast: false  # continue with other jobs if one fails
+      matrix:
+        include:
+          - RUNNER: windows-latest
+            BUILD_TARGET: windows
+            SHELL: pwsh
+            QT_VERSION: "6.7"
+            QT_ARCH: win64_msvc2019_64
+          - RUNNER: windows-latest
+            BUILD_TARGET: windows
+            SHELL: pwsh
+            QT_VERSION: "6.7"
+            QT_ARCH: win64_msvc2019_arm64
+          - RUNNER: macos-latest
+            BUILD_TARGET: macos
+            shell: bash
+            QT_VERSION: "6.6"
+          - RUNNER: ubuntu-latest
+            # appveyor uses 16.04, glibc is too old in 16.04 to run node based github actions
+            # TODO: does the version actually matter
+            CONTAINER: ubuntu:20.04
+            BUILD_TARGET: steamlink
+            SHELL: bash
+          - RUNNER: ubuntu-latest
+            # appveyor uses 20.04, but the install qt action requires newer glibc (2.32, 2.33, 2.34, and 2.35)
+            CONTAINER: ubuntu:22.04
+            BUILD_TARGET: linux
+            SHELL: bash
+            FFMPEG_CONFIGURE_ARGS: >-
+              --enable-pic
+              --disable-static
+              --enable-shared
+              --disable-all
+              --enable-avcodec
+              --enable-avformat
+              --enable-swscale
+              --enable-decoder=h264
+              --enable-decoder=hevc
+              --enable-decoder=av1
+              --enable-hwaccel=h264_vaapi
+              --enable-hwaccel=hevc_vaapi
+              --enable-hwaccel=av1_vaapi
+              --enable-hwaccel=h264_vdpau
+              --enable-hwaccel=hevc_vdpau
+              --enable-hwaccel=av1_vdpau
+              --enable-libdrm
+              --enable-hwaccel=h264_vulkan
+              --enable-hwaccel=hevc_vulkan
+              --enable-hwaccel=av1_vulkan
+              --enable-libdav1d
+              --enable-decoder=libdav1d
+            QT_VERSION: "5.15.4"
+            AQT_VERSION: "<3.0.0"
+
+    steps:
+      - name: Init container
+        if: matrix.CONTAINER
+        shell: bash
+        run: |
+          echo "::group::Install dependencies"
+          dependencies=(
+            "ca-certificates"
+            "git"
+          )
+          apt-get update -y
+          apt-get install -y --no-install-recommends "${dependencies[@]}"
+          echo "::endgroup::"
+
+          echo "::group::Set TZ"
+          ln -sf /usr/share/zoneinfo/UTC /etc/localtime
+          echo "::endgroup::"
+
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Set version
+        shell: bash
+        run: |
+          export VERSION=$(cat app/version.txt)
+          echo "VERSION=$VERSION" >> $GITHUB_ENV
+
+      - name: Install Qt
+        if: matrix.BUILD_TARGET != 'steamlink'  # Steam Link SDK includes Qt 5.14
+        uses: jurplel/install-qt-action@v4
+        with:
+          version: ${{ matrix.QT_VERSION }}
+          arch: ${{ matrix.QT_ARCH }}
+          install-deps: nosudo
+          aqtversion: ${{ matrix.AQT_VERSION || '>=3.1.0' }}
