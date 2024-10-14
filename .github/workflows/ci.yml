@@ -45,12 +45,12 @@ jobs:
           - RUNNER: ubuntu-latest
             # appveyor uses 16.04, glibc is too old in 16.04 to run node based github actions
             # TODO: does the version actually matter
-            CONTAINER: ubuntu:20.04
+            CONTAINER: ubuntu:16.04
             BUILD_TARGET: steamlink
             SHELL: bash
           - RUNNER: ubuntu-latest
             # appveyor uses 20.04, but the install qt action requires newer glibc (2.32, 2.33, 2.34, and 2.35)
-            CONTAINER: ubuntu:22.04
+            CONTAINER: ubuntu:20.04
             BUILD_TARGET: linux
             SHELL: bash
             FFMPEG_CONFIGURE_ARGS: >-
@@ -97,6 +97,14 @@ jobs:
           ln -sf /usr/share/zoneinfo/UTC /etc/localtime
           echo "::endgroup::"
 
+      - name: Patch glibc for backwards compatibility
+        id: polyfill
+        if: matrix.CONTAINER
+        uses: lmangani/polyfill-glibc-action@1.1.4
+        with:
+          glibc: "2.25"
+          target: "/__e/node20/bin/node"
+
       - name: Checkout
         uses: actions/checkout@v4
         with:
@@ -116,3 +124,4 @@ jobs:
           arch: ${{ matrix.QT_ARCH }}
           install-deps: nosudo
           aqtversion: ${{ matrix.AQT_VERSION || '>=3.1.0' }}
+          setup-python: ${{ matrix.CONTAINER == '' && false || true }}
