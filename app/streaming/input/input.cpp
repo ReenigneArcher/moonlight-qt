@@ -60,7 +60,9 @@ SdlInputHandler::SdlInputHandler(StreamingPreferences& prefs, int streamWidth, i
     // controllers, but breaks DirectInput applications. We will enable it because
     // it's likely that working rumble is what the user is expecting. If they don't
     // want this behavior, they can override it with the environment variable.
+#ifdef SDL_HINT_JOYSTICK_ENHANCED_REPORTS
     SDL_SetHint(SDL_HINT_JOYSTICK_ENHANCED_REPORTS, "1");
+#endif
 
     // Populate special key combo configuration
     m_SpecialKeyCombos[KeyComboQuit].keyCombo = KeyComboQuit;

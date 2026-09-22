@@ -539,10 +539,10 @@ bool PlVkRenderer::initialize(PDECODER_PARAMETERS params)
     }
 
 #ifdef PLVK_USE_EARLY_RENDER_TO_WAIT
-    SDL_Surface *emptySurface = SDL_CreateRGBSurfaceWithFormat(0, 1, 1, 0, SDL_PIXELFORMAT_ARGB8888);
+    SDL_Surface *emptySurface = SDL_CreateSurface(1, 1, SDL_PIXELFORMAT_ARGB8888);
     if (emptySurface == nullptr) {
         SDL_LogError(SDL_LOG_CATEGORY_APPLICATION,
-                     "SDL_CreateRGBSurfaceWithFormat() failed: %s", SDL_GetError());
+                     "SDL_CreateSurface() failed: %s", SDL_GetError());
         return false;
     }
 
