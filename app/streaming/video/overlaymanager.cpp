@@ -3,6 +3,24 @@
 
 using namespace Overlay;
 
+namespace {
+
+bool textRequiresWrapping(TTF_Font* font, const QByteArray& text, int wrapWidth)
+{
+    int extent;
+#if SDL_TTF_VERSION_ATLEAST(3, 2, 0)
+    size_t count;
+    return TTF_MeasureString(font, text.constData(), text.size(), wrapWidth, &extent, &count) &&
+           count < static_cast<size_t>(text.size());
+#else
+    int count;
+    return TTF_MeasureText(font, text.constData(), text.size(), wrapWidth, &extent, &count) &&
+           count < text.size();
+#endif
+}
+
+}
+
 OverlayManager::OverlayManager() :
     m_Renderer(nullptr),
     m_FontData(Path::readDataFile("ModeSeven.ttf"))
@@ -181,10 +199,7 @@ SDL_Surface* OverlayManager::RenderTextOutlinedWrapped(TTF_Font* font, const cha
     // need further testing to ensure that all renderers can handle non-NPOT overlay textures.
     for (const QString& line : QString(text).split('\n')) {
         const QByteArray utf8Line = line.toUtf8();
-        int extent;
-        size_t count;
-        if (TTF_MeasureString(font, utf8Line.constData(), utf8Line.size(), wrapWidth, &extent, &count) &&
-                count < static_cast<size_t>(utf8Line.size())) {
+        if (textRequiresWrapping(font, utf8Line, wrapWidth)) {
             // If it requires wrapping, render it without the outline
             TTF_SetFontOutline(font, oldOutline);
             return TTF_RenderText_Blended_Wrapped(font, text, 0, textColor, wrapWidth);
