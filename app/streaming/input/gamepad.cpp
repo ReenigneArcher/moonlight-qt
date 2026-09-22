@@ -475,6 +475,7 @@ void SdlInputHandler::handleControllerTouchpadEvent(SDL_GamepadTouchpadEvent * e
                                 event->x, event->y, event->pressure);
 }
 
+#if SDL_VERSION_ATLEAST(3, 5, 0)
 void SdlInputHandler::handleControllerCapSenseEvent(SDL_GamepadCapSenseEvent* event)
 {
     GamepadState* state = findStateForGamepad(event->which);
@@ -508,6 +509,7 @@ void SdlInputHandler::handleControllerCapSenseEvent(SDL_GamepadCapSenseEvent* ev
     }
     sendGamepadState(state);
 }
+#endif
 
 void SdlInputHandler::handleJoystickBatteryEvent(SDL_JoyBatteryEvent* event)
 {
@@ -640,6 +642,7 @@ void SdlInputHandler::handleControllerDeviceEvent(SDL_GamepadDeviceEvent * event
                 supportedButtonFlags |= getButtonFlag(state, gamepadButton);
             }
         }
+#if SDL_VERSION_ATLEAST(3, 5, 0)
         if (state->isSteamController) {
             supportedButtonFlags |= SDL_GamepadHasCapSense(state->controller, SDL_GAMEPAD_CAPSENSE_LEFT_STICK) ?
                                         STEAM_LEFT_STICK_TOUCH_FLAG : 0;
@@ -650,6 +653,7 @@ void SdlInputHandler::handleControllerDeviceEvent(SDL_GamepadDeviceEvent * event
             supportedButtonFlags |= SDL_GamepadHasCapSense(state->controller, SDL_GAMEPAD_CAPSENSE_RIGHT_GRIP) ?
                                         STEAM_RIGHT_GRIP_TOUCH_FLAG : 0;
         }
+#endif
 
         uint32_t capabilities = 0;
         if (SDL_GamepadHasAxis(state->controller, SDL_GAMEPAD_AXIS_LEFT_TRIGGER) ||

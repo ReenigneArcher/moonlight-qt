@@ -94,7 +94,9 @@ public:
 
     void handleControllerTouchpadEvent(SDL_GamepadTouchpadEvent* event);
 
+#if SDL_VERSION_ATLEAST(3, 5, 0)
     void handleControllerCapSenseEvent(SDL_GamepadCapSenseEvent* event);
+#endif
 
     void handleJoystickBatteryEvent(SDL_JoyBatteryEvent* event);
 

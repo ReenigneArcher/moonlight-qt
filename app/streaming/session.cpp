@@ -2316,10 +2316,12 @@ void Session::exec()
         case SDL_EVENT_GAMEPAD_TOUCHPAD_MOTION :
             m_InputHandler->handleControllerTouchpadEvent(&event.gtouchpad);
             break;
+#if SDL_VERSION_ATLEAST(3, 5, 0)
         case SDL_EVENT_GAMEPAD_CAPSENSE_TOUCH:
         case SDL_EVENT_GAMEPAD_CAPSENSE_RELEASE:
             m_InputHandler->handleControllerCapSenseEvent(&event.gcapsense);
             break;
+#endif
         case SDL_EVENT_JOYSTICK_BATTERY_UPDATED :
             m_InputHandler->handleJoystickBatteryEvent(&event.jbattery);
             break;
