@@ -207,7 +207,7 @@ void Session::clSetHdrMode(bool enabled)
     // If we're in the process of recreating our decoder when we get
     // this callback, we'll drop it. The main thread will make the
     // callback when it finishes creating the new decoder.
-    if (SDL_TryLockMutex(s_ActiveSession->m_DecoderLock) == 0) {
+    if (SDL_TryLockMutex(s_ActiveSession->m_DecoderLock)) {
         IVideoDecoder* decoder = s_ActiveSession->m_VideoDecoder;
         if (decoder != nullptr) {
             decoder->setHdrMode(enabled);
@@ -392,7 +392,7 @@ int Session::drSubmitDecodeUnit(PDECODE_UNIT du)
     // safely return DR_OK and wait for the IDR frame request by
     // the decoder reinitialization code.
 
-    if (SDL_TryLockMutex(s_ActiveSession->m_DecoderLock) == 0) {
+    if (SDL_TryLockMutex(s_ActiveSession->m_DecoderLock)) {
         IVideoDecoder* decoder = s_ActiveSession->m_VideoDecoder;
         if (decoder != nullptr) {
             int ret = decoder->submitDecodeUnit(du);
