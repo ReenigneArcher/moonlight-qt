@@ -77,9 +77,9 @@ void SdlInputHandler::performSpecialKeyCombo(KeyCombo combo)
         SDL_LogInfo(SDL_LOG_CATEGORY_APPLICATION,
                     "Detected show mouse combo");
 
-        if (!SDL_GetRelativeMouseMode()) {
+        if (!SDL_GetWindowRelativeMouseMode(m_Window)) {
             m_MouseCursorCapturedVisibilityState = !m_MouseCursorCapturedVisibilityState;
-            SDL_ShowCursor(m_MouseCursorCapturedVisibilityState);
+            SDLC_SetCursorVisible(m_MouseCursorCapturedVisibilityState);
         }
         else {
             SDL_LogWarn(SDL_LOG_CATEGORY_APPLICATION,
@@ -149,7 +149,7 @@ void SdlInputHandler::performSpecialKeyCombo(KeyCombo combo)
 
         // Push a quit event to the main loop
         SDL_Event quitExitEvent;
-        quitExitEvent.type = SDL_QUIT;
+        quitExitEvent.type = SDL_EVENT_QUIT;
         quitExitEvent.quit.timestamp = SDL_GetTicks();
         SDL_PushEvent(&quitExitEvent);
         break;
@@ -182,12 +182,12 @@ void SdlInputHandler::handleKeyEvent(SDL_KeyboardEvent* event)
 
     if (event->repeat) {
         // Ignore repeat key down events
-        SDL_assert(event->state == true);
+        SDL_assert(event->down);
         return;
     }
 
     // Check for our special key combos
-    if ((event->state == true) &&
+    if (event->down &&
             (KEY_MOD(event) & SDL_KMOD_CTRL) &&
             (KEY_MOD(event) & SDL_KMOD_ALT) &&
             (KEY_MOD(event) & SDL_KMOD_SHIFT)) {
@@ -466,7 +466,7 @@ void SdlInputHandler::handleKeyEvent(SDL_KeyboardEvent* event)
     }
 
     // Track the key state so we always know which keys are down
-    if (event->state == true) {
+    if (event->down) {
         m_KeysDown.insert(keyCode);
     }
     else {
