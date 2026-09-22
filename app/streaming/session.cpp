@@ -7,6 +7,8 @@
 #include "SDL_compat.h"
 #include "utils.h"
 
+#include <cmath>
+
 #ifdef HAVE_FFMPEG
 #include "video/ffmpeg.h"
 #endif
@@ -1500,7 +1502,7 @@ void Session::updateOptimalWindowDisplayMode()
                             "Found display mode with video resolution: %dx%dx%.2f",
                             mode.w, mode.h, mode.refresh_rate);
                 if (mode.refresh_rate >= bestMode.refresh_rate &&
-                        (bestModeAspectRatio == 0 || fabs(videoAspectRatio - modeAspectRatio) <= fabs(videoAspectRatio - bestModeAspectRatio))) {
+                        (bestModeAspectRatio == 0 || std::fabs(videoAspectRatio - modeAspectRatio) <= std::fabs(videoAspectRatio - bestModeAspectRatio))) {
                     bestMode = mode;
                     bestModeAspectRatio = modeAspectRatio;
                 }

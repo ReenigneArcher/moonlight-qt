@@ -140,8 +140,9 @@ public:
 
     bool updateVideoRegionSizeForFrame(AVFrame* frame)
     {
-        int drawableWidth, drawableHeight;
-        SDL_Metal_GetDrawableSize(m_Window, &drawableWidth, &drawableHeight);
+        CGSize drawableSize = m_MetalLayer.drawableSize;
+        int drawableWidth = static_cast<int>(drawableSize.width);
+        int drawableHeight = static_cast<int>(drawableSize.height);
 
         // Check if anything has changed since the last vertex buffer upload
         if (m_VideoVertexBuffer &&
