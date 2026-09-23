@@ -492,6 +492,19 @@ void SdlInputHandler::handleControllerTouchpadEvent(SDL_GamepadTouchpadEvent * e
         return;
     }
 
+    if (state->isSteamController &&
+            SDL_GetLogPriority(SDL_LOG_CATEGORY_INPUT) <= SDL_LOG_PRIORITY_DEBUG &&
+            (eventType != LI_TOUCH_EVENT_MOVE ||
+             event->timestamp >= state->lastTouchpadDebugTime + SDL_MS_TO_NS(200))) {
+        SDL_LogDebug(SDL_LOG_CATEGORY_INPUT,
+                     "Steam Controller touch forwarded: ms=%llu pad=%d finger=%d event=%s x=%.3f y=%.3f pressure=%.3f",
+                     (unsigned long long)SDL_NS_TO_MS(event->timestamp), event->touchpad, event->finger,
+                     eventType == LI_TOUCH_EVENT_DOWN ? "down" :
+                     eventType == LI_TOUCH_EVENT_UP ? "up" : "move",
+                     event->x, event->y, event->pressure);
+        state->lastTouchpadDebugTime = event->timestamp;
+    }
+
     LiSendControllerTouchEvent2((uint8_t)state->index, eventType,
                                 (uint8_t)event->touchpad, event->finger,
                                 event->x, event->y, event->pressure);

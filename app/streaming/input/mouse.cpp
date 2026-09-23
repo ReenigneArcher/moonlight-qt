@@ -81,12 +81,21 @@ void SdlInputHandler::handleMouseMotionEvent(SDL_MouseMotionEvent* event)
 
     // Batch all pending mouse motion events to save CPU time
     Sint32 x = event->x, y = event->y, xrel = event->xrel, yrel = event->yrel;
+    const SDL_MouseID firstMouse = event->which;
+    SDL_MouseID lastMouse = firstMouse;
+    Uint64 lastTimestamp = event->timestamp;
+    int motionCount = 1;
+    bool mixedMice = false;
     SDL_Event nextEvent;
     while (SDL_PeepEvents(&nextEvent, 1, SDL_GETEVENT, SDL_EVENT_MOUSE_MOTION, SDL_EVENT_MOUSE_MOTION) > 0) {
         event = &nextEvent.motion;
 
         // Ignore synthetic mouse events
         if (event->which != SDL_TOUCH_MOUSEID) {
+            mixedMice |= event->which != firstMouse;
+            lastMouse = event->which;
+            lastTimestamp = event->timestamp;
+            ++motionCount;
             x = event->x;
             y = event->y;
             xrel += event->xrel;
@@ -96,6 +105,21 @@ void SdlInputHandler::handleMouseMotionEvent(SDL_MouseMotionEvent* event)
 
     // We should not reference the original event anymore
     event = nullptr;
+
+    // Trace the client mouse path independently from forwarded gamepad touches.
+    // Device names may be unavailable when Windows device hotplug detection is disabled.
+    static Uint64 lastMouseDebugTime = 0;
+    if (SDL_GetLogPriority(SDL_LOG_CATEGORY_INPUT) <= SDL_LOG_PRIORITY_DEBUG &&
+            (lastTimestamp >= lastMouseDebugTime + SDL_MS_TO_NS(200) ||
+             xrel >= 80 || xrel <= -80 || yrel >= 80 || yrel <= -80)) {
+        const char* name = SDL_GetMouseNameForID(firstMouse);
+        SDL_LogDebug(SDL_LOG_CATEGORY_INPUT,
+                     "Moonlight mouse motion: ms=%llu first=%u (%s) last=%u mixed=%d count=%d dx=%d dy=%d absolute=%d",
+                     (unsigned long long)SDL_NS_TO_MS(lastTimestamp), firstMouse,
+                     name ? name : "unknown", lastMouse, mixedMice, motionCount,
+                     xrel, yrel, m_AbsoluteMouseMode);
+        lastMouseDebugTime = lastTimestamp;
+    }
 
     if (m_AbsoluteMouseMode) {
         int windowWidth, windowHeight;
