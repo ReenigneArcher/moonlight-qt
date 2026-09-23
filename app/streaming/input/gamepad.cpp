@@ -375,8 +375,16 @@ void SdlInputHandler::handleControllerButtonEvent(SDL_GamepadButtonEvent * event
         }
     }
 
+    // Capacitive stick and grip contacts can remain active while holding the
+    // Steam Controller. They are not buttons in the quit combo.
+    const uint32_t incidentalTouchFlags = state->isSteamController ?
+        (STEAM_LEFT_STICK_TOUCH_FLAG | STEAM_RIGHT_STICK_TOUCH_FLAG |
+         STEAM_LEFT_GRIP_TOUCH_FLAG | STEAM_RIGHT_GRIP_TOUCH_FLAG) : 0;
+    const uint32_t comboButtons = state->buttons & ~incidentalTouchFlags;
+
     // Handle Start+Select+L1+R1 as a gamepad quit combo
-    if (state->buttons == (PLAY_FLAG | BACK_FLAG | LB_FLAG | RB_FLAG) && qgetenv("NO_GAMEPAD_QUIT") != "1") {
+    if (comboButtons == (PLAY_FLAG | BACK_FLAG | LB_FLAG | RB_FLAG) &&
+        qgetenv("NO_GAMEPAD_QUIT") != "1") {
         SDL_LogInfo(SDL_LOG_CATEGORY_APPLICATION,
                     "Detected quit gamepad button combo");
 
@@ -393,7 +401,7 @@ void SdlInputHandler::handleControllerButtonEvent(SDL_GamepadButtonEvent * event
     }
 
     // Handle Select+L1+R1+X as a gamepad overlay combo
-    if (state->buttons == (BACK_FLAG | LB_FLAG | RB_FLAG | X_FLAG)) {
+    if (comboButtons == (BACK_FLAG | LB_FLAG | RB_FLAG | X_FLAG)) {
         SDL_LogInfo(SDL_LOG_CATEGORY_APPLICATION,
                     "Detected stats toggle gamepad combo");
 
@@ -431,10 +439,23 @@ void SdlInputHandler::handleControllerSensorEvent(SDL_GamepadSensorEvent * event
             LiSendControllerMotionEvent((uint8_t)state->index, LI_MOTION_TYPE_ACCEL, event->data[0], event->data[1], event->data[2]);
         }
         break;
-    case SDL_SENSOR_GYRO:
-        if (state->gyroReportPeriodMs &&
-                event->timestamp >= state->lastGyroEventTime + SDL_MS_TO_NS(state->gyroReportPeriodMs) &&
-                memcmp(event->data, state->lastGyroEventData, sizeof(event->data)) != 0) {
+    case SDL_SENSOR_GYRO: {
+        const bool shouldForward = state->gyroReportPeriodMs &&
+            event->timestamp >= state->lastGyroEventTime + SDL_MS_TO_NS(state->gyroReportPeriodMs) &&
+            memcmp(event->data, state->lastGyroEventData, sizeof(event->data)) != 0;
+
+        // Enable with SDL_LOGGING=input=debug to compare the physical SDL
+        // reading with what Moonlight forwards, without flooding normal logs.
+        if (state->isSteamController &&
+                SDL_GetLogPriority(SDL_LOG_CATEGORY_INPUT) <= SDL_LOG_PRIORITY_DEBUG &&
+                event->timestamp >= state->lastGyroDebugTime + SDL_MS_TO_NS(200)) {
+            SDL_LogDebug(SDL_LOG_CATEGORY_INPUT,
+                         "Steam Controller gyro SDL rad/s: %.3f, %.3f, %.3f; forward: %d",
+                         event->data[0], event->data[1], event->data[2], shouldForward);
+            state->lastGyroDebugTime = event->timestamp;
+        }
+
+        if (shouldForward) {
             memcpy(state->lastGyroEventData, event->data, sizeof(event->data));
             state->lastGyroEventTime = event->timestamp;
 
@@ -445,6 +466,7 @@ void SdlInputHandler::handleControllerSensorEvent(SDL_GamepadSensorEvent * event
                                         event->data[2] * 57.2957795f);
         }
         break;
+    }
     }
 }
 
@@ -822,12 +844,20 @@ void SdlInputHandler::setMotionEventState(uint16_t controllerNumber, uint8_t mot
         switch (motionType) {
         case LI_MOTION_TYPE_ACCEL:
             m_GamepadState[controllerNumber].accelReportPeriodMs = reportPeriodMs;
-            SDL_SetGamepadSensorEnabled(m_GamepadState[controllerNumber].controller, SDL_SENSOR_ACCEL, reportRateHz != 0);
+            if (!SDL_SetGamepadSensorEnabled(m_GamepadState[controllerNumber].controller,
+                                             SDL_SENSOR_ACCEL, reportRateHz != 0)) {
+                SDL_LogWarn(SDL_LOG_CATEGORY_INPUT, "Failed to %s controller accelerometer: %s",
+                            reportRateHz ? "enable" : "disable", SDL_GetError());
+            }
             break;
 
         case LI_MOTION_TYPE_GYRO:
             m_GamepadState[controllerNumber].gyroReportPeriodMs = reportPeriodMs;
-            SDL_SetGamepadSensorEnabled(m_GamepadState[controllerNumber].controller, SDL_SENSOR_GYRO, reportRateHz != 0);
+            if (!SDL_SetGamepadSensorEnabled(m_GamepadState[controllerNumber].controller,
+                                             SDL_SENSOR_GYRO, reportRateHz != 0)) {
+                SDL_LogWarn(SDL_LOG_CATEGORY_INPUT, "Failed to %s controller gyroscope: %s",
+                            reportRateHz ? "enable" : "disable", SDL_GetError());
+            }
             break;
         }
     }

@@ -20,6 +20,7 @@ struct GamepadState {
     uint8_t gyroReportPeriodMs;
     float lastGyroEventData[SDL_arraysize(SDL_GamepadSensorEvent::data)];
     Uint64 lastGyroEventTime;
+    Uint64 lastGyroDebugTime;
 
     uint8_t accelReportPeriodMs;
     float lastAccelEventData[SDL_arraysize(SDL_GamepadSensorEvent::data)];
