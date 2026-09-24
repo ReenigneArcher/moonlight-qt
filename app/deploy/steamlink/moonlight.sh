@@ -8,6 +8,7 @@ HOME=/usr/local/moonlight
 # Enable Steam Controller detection in SDL
 # https://github.com/moonlight-stream/moonlight-qt/issues/697
 export SDL_ENABLE_STEAM_CONTROLLERS=1
+export LD_LIBRARY_PATH="$PWD/lib${LD_LIBRARY_PATH:+:$LD_LIBRARY_PATH}"
 
 # Renice PE_Single_CPU which seems to host A/V stuff
 renice -10 -p $(pidof PE_Single_CPU)

@@ -63,7 +63,16 @@ macx:!disable-prebuilts {
 
 unix:if(!macx|disable-prebuilts) {
     CONFIG += link_pkgconfig
-    PKGCONFIG += openssl sdl3 sdl3-ttf
+    PKGCONFIG += openssl
+
+    config_SL {
+        STEAMLINK_SDL3_PREFIX = $$(STEAMLINK_SDL3_PREFIX)
+        isEmpty(STEAMLINK_SDL3_PREFIX): error("Missing Steam Link SDL3 build prefix")
+        INCLUDEPATH += $$STEAMLINK_SDL3_PREFIX/include
+        LIBS += -L$$STEAMLINK_SDL3_PREFIX/lib -lSDL3_ttf -lSDL3
+    } else {
+        PKGCONFIG += sdl3 sdl3-ttf
+    }
 
     # We have our own optimized libopus.a for Steam Link
     if(!config_SL|disable-prebuilts) {
