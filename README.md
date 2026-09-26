@@ -74,7 +74,7 @@ Hosting for Moonlight's Debian and L4T package repositories is graciously provid
 ### Steam Link Build Requirements
 * [Steam Link SDK](https://github.com/ValveSoftware/steamlink-sdk) cloned on your build system
 * STEAMLINK_SDK_PATH environment variable set to the Steam Link SDK path
-* [Our SDL3 fork](https://github.com/ReenigneArcher/SDL) checked out at `2380a835344238a3858728aa850993a4f3492c2d` in `deps/SDL`, and [SDL_ttf](https://github.com/libsdl-org/SDL_ttf) at `release-3.2.2` with submodules in `deps/SDL_ttf`. The Steam Link build script cross-compiles and bundles both; CI checks them out automatically.
+* [Our SDL3 fork](https://github.com/ReenigneArcher/SDL) checked out at `a44746fbf58aba593d8db100f49cd2beafe05ee9` in `deps/SDL`, and [SDL_ttf](https://github.com/libsdl-org/SDL_ttf) at `release-3.2.2` with submodules in `deps/SDL_ttf`. The Steam Link build script cross-compiles and bundles both; CI checks them out automatically.
 
 **Steam Link Hardware Limitations**  
 Moonlight builds for Steam Link are subject to hardware limitations of the Steam Link device:
